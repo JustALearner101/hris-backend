@@ -1,0 +1,683 @@
+
+// ========================================================
+// GENERATOR & DATASOURCE
+// ========================================================
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public", "auth", "core", "time", "payroll", "finance", "asset", "talent", "comm", "audit"]
+}
+
+// ========================================================
+// AUTH SCHEMA
+// ========================================================
+model User {
+  id            String   @id @default(uuid())
+  tenant_id     String
+  email         String   @unique
+  password_hash String
+  role          String
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  deleted_at    DateTime?
+  version       Int      @default(1)
+
+  @@schema("auth")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  name        String
+  permissions Json
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  deleted_at  DateTime?
+  version     Int      @default(1)
+
+  @@unique([tenant_id, name])
+  @@schema("auth")
+}
+
+// ========================================================
+// CORE SCHEMA
+// ========================================================
+model Tenant {
+  id         String   @id @default(uuid())
+  name       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  deleted_at DateTime?
+  version    Int      @default(1)
+
+  @@schema("core")
+}
+
+model Entity {
+  id         String   @id @default(uuid())
+  tenant_id  String
+  name       String
+  timezone   String   @default("Asia/Jakarta")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  deleted_at DateTime?
+  version    Int      @default(1)
+
+  @@schema("core")
+}
+
+model Department {
+  id         String   @id @default(uuid())
+  tenant_id  String
+  entity_id  String?
+  name       String
+  parent_id  String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  deleted_at DateTime?
+  version    Int      @default(1)
+
+  @@schema("core")
+}
+
+model Position {
+  id           String   @id @default(uuid())
+  tenant_id    String
+  entity_id    String?
+  department_id String?
+  title        String
+  grade_id     String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  deleted_at   DateTime?
+  version      Int      @default(1)
+
+  @@schema("core")
+}
+
+model Grade {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  entity_id   String?
+  code        String
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  deleted_at  DateTime?
+  version     Int      @default(1)
+
+  @@schema("core")
+}
+
+model Employee {
+  id           String   @id @default(uuid())
+  tenant_id    String
+  entity_id    String?
+  employee_no  String
+  first_name   String
+  last_name    String?
+  email        String?  @unique
+  nik          String?
+  npwp         String?
+  hire_date    DateTime
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  deleted_at   DateTime?
+  version      Int      @default(1)
+
+  @@index([tenant_id])
+  @@unique([tenant_id, employee_no])
+  @@schema("core")
+}
+
+model Employment {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  entity_id   String?
+  employee_id String
+  position_id String?
+  start_date  DateTime
+  end_date    DateTime?
+  status      String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  deleted_at  DateTime?
+  version     Int      @default(1)
+
+  @@schema("core")
+}
+
+model Compensation {
+  id            String   @id @default(uuid())
+  tenant_id     String
+  entity_id     String?
+  employee_id   String
+  base_salary   Float
+  currency      String   @default("IDR")
+  allowances    Json?
+  effective_date DateTime
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  deleted_at    DateTime?
+  version       Int      @default(1)
+
+  @@schema("core")
+}
+
+model Document {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  entity_id   String?
+  employee_id String?
+  type        String
+  file_url    String
+  signed      Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  deleted_at  DateTime?
+  version     Int      @default(1)
+
+  @@schema("core")
+}
+
+// ========================================================
+// TIME SCHEMA
+// ========================================================
+model AttendanceEvent {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  entity_id   String?
+  employee_id String
+  type        String
+  occurred_at DateTime
+  source      String?
+  geo         Json?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  deleted_at  DateTime?
+  version     Int      @default(1)
+
+  @@schema("time")
+}
+
+model Shift {
+  id         String   @id @default(uuid())
+  tenant_id  String
+  entity_id  String?
+  name       String
+  start_time DateTime
+  end_time   DateTime
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  deleted_at DateTime?
+  version    Int      @default(1)
+
+  @@schema("time")
+}
+
+model Schedule {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  entity_id   String?
+  employee_id String
+  shift_id    String
+  date        DateTime
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  deleted_at  DateTime?
+  version     Int      @default(1)
+
+  @@schema("time")
+}
+
+model Timesheet {
+  id             String   @id @default(uuid())
+  tenant_id      String
+  entity_id      String?
+  employee_id    String
+  period_start   DateTime
+  period_end     DateTime
+  total_hours    Float?
+  overtime_hours Float?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  deleted_at     DateTime?
+  version        Int      @default(1)
+
+  @@schema("time")
+}
+
+model Overtime {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  entity_id   String?
+  employee_id String
+  date        DateTime
+  hours       Float
+  reason      String?
+  approved    Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  deleted_at  DateTime?
+  version     Int      @default(1)
+
+  @@schema("time")
+}
+
+model LeavePolicy {
+  id         String   @id @default(uuid())
+  tenant_id  String
+  entity_id  String?
+  name       String
+  type       String
+  accrual    Float?
+  carry_over Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  deleted_at DateTime?
+  version    Int      @default(1)
+
+  @@schema("time")
+}
+
+model LeaveBalance {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  entity_id   String?
+  employee_id String
+  policy_id   String
+  balance     Float    @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  deleted_at  DateTime?
+  version     Int      @default(1)
+
+  @@schema("time")
+}
+
+model LeaveRequest {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  entity_id   String?
+  employee_id String
+  policy_id   String
+  start_date  DateTime
+  end_date    DateTime
+  status      String
+  reason      String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  deleted_at  DateTime?
+  version     Int      @default(1)
+
+  @@schema("time")
+}
+
+// ========================================================
+// PAYROLL SCHEMA
+// ========================================================
+model PayGroup {
+  id         String   @id @default(uuid())
+  tenant_id  String
+  entity_id  String?
+  name       String
+  frequency  String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  deleted_at DateTime?
+  version    Int      @default(1)
+
+  @@schema("payroll")
+}
+
+model PayrollRun {
+  id           String   @id @default(uuid())
+  tenant_id    String
+  entity_id    String?
+  pay_group_id String
+  period_start DateTime
+  period_end   DateTime
+  payout_date  DateTime
+  status       String
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  deleted_at   DateTime?
+  version      Int      @default(1)
+
+  @@schema("payroll")
+}
+
+model Payslip {
+  id             String   @id @default(uuid())
+  tenant_id      String
+  entity_id      String?
+  payroll_run_id String
+  employee_id    String
+  gross_amount   Float
+  net_amount     Float
+  file_url       String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  deleted_at     DateTime?
+  version        Int      @default(1)
+
+  @@schema("payroll")
+}
+
+model TaxComponent {
+  id         String   @id @default(uuid())
+  tenant_id  String
+  entity_id  String?
+  name       String
+  rate       Float
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  deleted_at DateTime?
+  version    Int      @default(1)
+
+  @@schema("payroll")
+}
+
+model BpjsComponent {
+  id         String   @id @default(uuid())
+  tenant_id  String
+  entity_id  String?
+  type       String
+  rate       Float
+  ceiling    Float?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  deleted_at DateTime?
+  version    Int      @default(1)
+
+  @@schema("payroll")
+}
+
+// ========================================================
+// FINANCE SCHEMA
+// ========================================================
+model ExpenseReport {
+  id           String   @id @default(uuid())
+  tenant_id    String
+  entity_id    String?
+  employee_id  String
+  title        String
+  total_amount Float
+  currency     String   @default("IDR")
+  status       String
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  deleted_at   DateTime?
+  version      Int      @default(1)
+
+  @@schema("finance")
+}
+
+model ExpenseItem {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  entity_id   String?
+  report_id   String
+  category    String
+  amount      Float
+  currency    String   @default("IDR")
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  deleted_at  DateTime?
+  version     Int      @default(1)
+
+  @@schema("finance")
+}
+
+// ========================================================
+// ASSET SCHEMA
+// ========================================================
+model Asset {
+  id               String   @id @default(uuid())
+  tenant_id        String
+  entity_id        String?
+  name             String
+  type             String
+  serial_no        String?
+  purchase_date    DateTime?
+  depreciation_years Int?
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  deleted_at       DateTime?
+  version          Int      @default(1)
+
+  @@schema("asset")
+}
+
+model AssetAssignment {
+  id            String   @id @default(uuid())
+  tenant_id     String
+  entity_id     String?
+  asset_id      String
+  employee_id   String
+  assigned_date DateTime
+  return_date   DateTime?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+  deleted_at    DateTime?
+  version       Int      @default(1)
+
+  @@schema("asset")
+}
+
+// ========================================================
+// TALENT SCHEMA
+// ========================================================
+model Candidate {
+  id         String   @id @default(uuid())
+  tenant_id  String
+  entity_id  String?
+  name       String
+  email      String
+  phone      String?
+  status     String   @default("APPLIED")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  deleted_at DateTime?
+  version    Int      @default(1)
+
+  @@schema("talent")
+}
+
+model Application {
+  id           String   @id @default(uuid())
+  tenant_id    String
+  entity_id    String?
+  candidate_id String
+  position_id  String?
+  status       String
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  deleted_at   DateTime?
+  version      Int      @default(1)
+
+  @@schema("talent")
+}
+
+model Interview {
+  id             String   @id @default(uuid())
+  tenant_id      String
+  entity_id      String?
+  application_id String
+  scheduled_at   DateTime
+  result         String?
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  deleted_at     DateTime?
+  version        Int      @default(1)
+
+  @@schema("talent")
+}
+
+model Offer {
+  id             String   @id @default(uuid())
+  tenant_id      String
+  entity_id      String?
+  application_id String
+  offered_salary Float
+  currency       String   @default("IDR")
+  status         String
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  deleted_at     DateTime?
+  version        Int      @default(1)
+
+  @@schema("talent")
+}
+
+model Goal {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  entity_id   String?
+  employee_id String
+  title       String
+  description String?
+  due_date    DateTime?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  deleted_at  DateTime?
+  version     Int      @default(1)
+
+  @@schema("talent")
+}
+
+model Kpi {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  entity_id   String?
+  employee_id String
+  metric      String
+  target      Float?
+  score       Float?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  deleted_at  DateTime?
+  version     Int      @default(1)
+
+  @@schema("talent")
+}
+
+model Review {
+  id           String   @id @default(uuid())
+  tenant_id    String
+  entity_id    String?
+  employee_id  String
+  reviewer_id  String
+  rating       Float?
+  comments     String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  deleted_at   DateTime?
+  version      Int      @default(1)
+
+  @@schema("talent")
+}
+
+model Feedback {
+  id               String   @id @default(uuid())
+  tenant_id        String
+  entity_id        String?
+  from_employee_id String
+  to_employee_id   String
+  message          String
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  deleted_at       DateTime?
+  version          Int      @default(1)
+
+  @@schema("talent")
+}
+
+// ========================================================
+// COMM SCHEMA
+// ========================================================
+model Notification {
+  id           String   @id @default(uuid())
+  tenant_id    String
+  entity_id    String?
+  recipient_id String
+  type         String
+  message      String
+  status       String
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  deleted_at   DateTime?
+  version      Int      @default(1)
+
+  @@schema("comm")
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  entity_id   String?
+  assignee_id String
+  title       String
+  status      String
+  due_date    DateTime?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  deleted_at  DateTime?
+  version     Int      @default(1)
+
+  @@schema("comm")
+}
+
+model Checklist {
+  id         String   @id @default(uuid())
+  tenant_id  String
+  entity_id  String?
+  task_id    String
+  item       String
+  checked    Boolean  @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  deleted_at DateTime?
+  version    Int      @default(1)
+
+  @@schema("comm")
+}
+
+model Announcement {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  entity_id   String?
+  title       String
+  body        String
+  published_at DateTime?
+  audience    Json?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  deleted_at  DateTime?
+  version     Int      @default(1)
+
+  @@schema("comm")
+}
+
+// ========================================================
+// AUDIT SCHEMA
+// ========================================================
+model AuditEvent {
+  id         String   @id @default(uuid())
+  tenant_id  String
+  entity_id  String?
+  source     String
+  event_type String
+  payload    Json?
+  occurred_at DateTime @default(now())
+  created_at DateTime @default(now())
+  version    Int      @default(1)
+
+  @@schema("audit")
+}

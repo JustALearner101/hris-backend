@@ -1,0 +1,1 @@
+export { CoreHrModule } from './core-hr/core-hr.module';
